@@ -49,14 +49,16 @@ public class SecurityConfig {
 
         http.sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)// Prevents session creation
-                .maximumSessions(1).maxSessionsPreventsLogin(false));
+                .maximumSessions(1).maxSessionsPreventsLogin(false)
+        );
         http.httpBasic(AbstractHttpConfigurer::disable);
         http.csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(
                 authorizeRequests -> authorizeRequests
                     .requestMatchers("/admin/**").hasRole("ADMIN")
                     .requestMatchers("/user/**").authenticated()
-                    .anyRequest().permitAll())
+                    .anyRequest().permitAll()
+            )
             // formlogin setting
             .formLogin(
                 formLogin -> formLogin
@@ -64,18 +66,20 @@ public class SecurityConfig {
                     .loginProcessingUrl("/loginProc")
                     .failureUrl("/login?error=true")
                     .usernameParameter("email")
-                    .defaultSuccessUrl("/api/user/loginOk"))
+                    .defaultSuccessUrl("/api/user/loginOk")
+            )
             // logout setting
             .logout(
                 logout -> logout.logoutUrl("/logout").logoutSuccessUrl("/user/userInfo")
                     .clearAuthentication(true) // Clears authentication without invalidating the session
                     .invalidateHttpSession(true) // Prevents session invalidation (no new session)
-                    .deleteCookies("JSESSIONID")); // Deletes existing JSESSIONID without creating a new one
+                    .deleteCookies("JSESSIONID")
+            ); // Deletes existing JSESSIONID without creating a new one
 
         // add filter for cors (we will connect with react)
-        http.addFilterBefore(corsFilter(), UsernamePasswordAuthenticationFilter.class);
+//        http.addFilterBefore(corsFilter(), UsernamePasswordAuthenticationFilter.class);
         http.addFilterAfter(cookieRemovalFilter, LogoutFilter.class); // 로그아웃 필터 이후에 실행
-        http.cors(Customizer.withDefaults());
+//        http.cors(Customizer.withDefaults());
 
         return http.build();
     }
@@ -84,18 +88,18 @@ public class SecurityConfig {
         return new SessionRegistryImpl();
     }
 
-    @Bean
-    public CorsFilter corsFilter() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:3000");// 리액트 서버
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-
-        return new CorsFilter(source);
-    }
+//    @Bean
+//    public CorsFilter corsFilter() {
+//        CorsConfiguration config = new CorsConfiguration();
+//        config.setAllowCredentials(true);
+//        config.addAllowedOrigin("http://localhost:3000");// 리액트 서버
+//        config.addAllowedHeader("*");
+//        config.addAllowedMethod("*");
+//
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        source.registerCorsConfiguration("/**", config);
+//
+//        return new CorsFilter(source);
+//    }
 
 }

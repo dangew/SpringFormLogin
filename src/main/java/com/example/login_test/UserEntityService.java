@@ -12,6 +12,7 @@ public class UserEntityService {
 
     public UserEntity register(UserEntity user) {
         user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+        user.setRole("USER");
         return userRepository.save(user);
     }
 
