@@ -2,6 +2,7 @@ package com.example.login_test;
 
 import com.example.login_test.filter.CookieRemovalFilter;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +13,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -48,15 +50,21 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http.sessionManagement(
-            session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)// Prevents session creation
-                .maximumSessions(1).maxSessionsPreventsLogin(false)
+            session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)// Prevents session creation
+                .maximumSessions(1) // 한 번에 1개 로그인만 허용
+                .maxSessionsPreventsLogin(false) // 새로운 로그인 시 기존 세션 강제 종료
+                .expiredSessionStrategy(
+                    event -> event
+                        .getSessionInformation()    
+                        .expireNow()
+                ) // 세션 즉시 삭제
         );
         http.httpBasic(AbstractHttpConfigurer::disable);
         http.csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(
                 authorizeRequests -> authorizeRequests
-                    .requestMatchers("/admin/**").hasRole("ADMIN")
-                    .requestMatchers("/user/**").authenticated()
+                    .requestMatchers("/info").hasAnyAuthority("USER")
                     .anyRequest().permitAll()
             )
             // formlogin setting
@@ -66,20 +74,18 @@ public class SecurityConfig {
                     .loginProcessingUrl("/loginProc")
                     .failureUrl("/login?error=true")
                     .usernameParameter("email")
-                    .defaultSuccessUrl("/api/user/loginOk")
+                    .defaultSuccessUrl("/info")
             )
             // logout setting
             .logout(
-                logout -> logout.logoutUrl("/logout").logoutSuccessUrl("/user/userInfo")
+                logout -> logout
+                    .logoutUrl("/logout")
+                    .logoutSuccessUrl("/info")
                     .clearAuthentication(true) // Clears authentication without invalidating the session
                     .invalidateHttpSession(true) // Prevents session invalidation (no new session)
                     .deleteCookies("JSESSIONID")
+                    .addLogoutHandler(customLogoutHandler)
             ); // Deletes existing JSESSIONID without creating a new one
-
-        // add filter for cors (we will connect with react)
-//        http.addFilterBefore(corsFilter(), UsernamePasswordAuthenticationFilter.class);
-        http.addFilterAfter(cookieRemovalFilter, LogoutFilter.class); // 로그아웃 필터 이후에 실행
-//        http.cors(Customizer.withDefaults());
 
         return http.build();
     }
@@ -87,19 +93,5 @@ public class SecurityConfig {
     public SessionRegistry sessionRegistry() {
         return new SessionRegistryImpl();
     }
-
-//    @Bean
-//    public CorsFilter corsFilter() {
-//        CorsConfiguration config = new CorsConfiguration();
-//        config.setAllowCredentials(true);
-//        config.addAllowedOrigin("http://localhost:3000");// 리액트 서버
-//        config.addAllowedHeader("*");
-//        config.addAllowedMethod("*");
-//
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        source.registerCorsConfiguration("/**", config);
-//
-//        return new CorsFilter(source);
-//    }
 
 }

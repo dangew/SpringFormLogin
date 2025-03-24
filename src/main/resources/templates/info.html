@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UserInfo</title>
+</head>
+<body>
+<!--  logged in user's info -->
+<h2>User Info</h2>
+<p th:text="'Name: ' + ${user.name}"></p>
+<p th:text="'Email: ' + ${user.email}"></p>
+<p th:text="'Role: ' + ${user.role}"></p>
+<div>
+    <button>
+        <a th:href="@{/logout}">Logout</a>
+    </button>
+</div>
+</body>
+</html>
