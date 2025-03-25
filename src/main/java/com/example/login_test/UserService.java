@@ -26,6 +26,7 @@ public class UserService implements UserDetailsService {
         // if not, throw UsernameNotFoundException
         UserEntity userEntity = userRepository.findByEmail(email).orElse(null);
         if (userEntity == null) {
+            log.info("username not found exception email={}", email);
             throw new UsernameNotFoundException(email);
         }
 
